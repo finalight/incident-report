@@ -1,17 +1,16 @@
 var express = require("express");
 var router = express.Router();
 var admin = require("firebase-admin");
-var auth = require('../adminAuth')
+var auth = require("../adminAuth");
 const { Client } = require("pg");
 require("dotenv").config();
 
 router.get("/", async (req, res, next) => {
   const client = new Client();
   try {
+   
     await client.connect();
-    const firebaseResult = await admin
-      .auth()
-      .verifyIdToken(req.headers["authorization"]);
+    const firebaseResult = await auth.verifyToken(req.headers["authorization"]);
 
     let dbResult;
     if (firebaseResult.admin) {
@@ -39,7 +38,7 @@ router.put("/:id/status", async (req, res, next) => {
   const client = new Client();
   try {
     if (!["Not Started", "In Progress", "Done"].includes(status)) {
-      res.status(400).send({ error: "Invalid status" });
+      return res.status(400).json({ error: "Invalid status" });
     }
 
     await client.connect();
@@ -48,10 +47,10 @@ router.put("/:id/status", async (req, res, next) => {
 
     await client.query(query, values);
     await client.end();
-    res.status(200).send({});
+    return res.status(200).json({});
   } catch (e) {
     console.log(e);
-    res.send(e);
+    return res.send(e);
   } finally {
     await client.end;
   }
@@ -77,6 +76,7 @@ router.put("/:id/:userId", async (req, res, next) => {
 
     await client.end();
     res.status(200).send({});
+    return next();
   } catch (e) {
     console.log(e);
   } finally {
@@ -84,8 +84,8 @@ router.put("/:id/:userId", async (req, res, next) => {
   }
 });
 
-router.post("/",  auth.isAuthorized, async (req, res, next) => {
-  let { title, details, assignee, status } = req.body;
+router.post("/", auth.isAuthorized, async (req, res, next) => {
+  let { title, details, assignee } = req.body;
   const client = new Client();
   try {
     await client.connect();
@@ -96,8 +96,8 @@ router.post("/",  auth.isAuthorized, async (req, res, next) => {
 
     await client.query(
       `INSERT INTO incidents(title, details, assignee, status)
-    values ($1, $2, $3, $4)`,
-      [title, details, assignee, status]
+    values ($1, $2, $3, 'Not Started')`,
+      [title, details, assignee]
     );
 
     await client.end();
@@ -111,7 +111,7 @@ router.post("/",  auth.isAuthorized, async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", auth.isAuthorized, async (req, res, next) => {
   const { id } = req.params;
   const client = new Client();
   try {

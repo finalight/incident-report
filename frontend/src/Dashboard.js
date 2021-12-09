@@ -1,8 +1,7 @@
 import { useContext } from "react";
-import AdminIncidentList from "./AdminIncidentList";
-import "./App.css";
-import AssigneeIncidentList from "./AssigneeIncidentList";
-import UserContext from "./UserContext";
+import AdminIncidentList from "./incidents/AdminIncidentList";
+import AssigneeIncidentList from "./incidents/AssigneeIncidentList";
+import UserContext from "./contexts/UserContext";
 function Dashboard() {
   const { user } = useContext(UserContext);
 

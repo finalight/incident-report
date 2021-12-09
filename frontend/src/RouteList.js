@@ -1,10 +1,9 @@
-import "./App.css";
 import Login from "./Login";
 import { Routes, Route } from "react-router-dom";
 import Dashboard from "./Dashboard";
 import React, { useState, useMemo } from "react";
-import AssigneesContext from "./AssigneesContext";
-import UserContext from "./UserContext";
+import AssigneesContext from "./contexts/AssigneesContext";
+import UserContext from "./contexts/UserContext";
 function RouteList() {
   const [assignees, setAssignees] = useState([]);
   const assigneeValue = useMemo(

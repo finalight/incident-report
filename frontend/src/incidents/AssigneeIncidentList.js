@@ -5,8 +5,7 @@ import Col from "react-bootstrap/Col";
 import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Table from "react-bootstrap/Table";
-import "./App.css";
-import UserContext from "./UserContext";
+import UserContext from "../contexts/UserContext";
 import { getIncidents, updateIncidentStatus } from "./incidents";
 function Dashboard() {
   const [incidents, setIncidents] = useState([]);
@@ -24,7 +23,7 @@ function Dashboard() {
   const updateIncidentStatusHandler = async (incidentId, status) => {
     try {
       await updateIncidentStatus(incidentId, status);
-      setIncidents(getIncidents(user.token));
+      setIncidents(await getIncidents(user.token));
     } catch (e) {
       console.log(e);
     }

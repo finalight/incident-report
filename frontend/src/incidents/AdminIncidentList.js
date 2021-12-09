@@ -7,9 +7,14 @@ import Form from "react-bootstrap/Form";
 import Modal from "react-bootstrap/Modal";
 import Row from "react-bootstrap/Row";
 import Table from "react-bootstrap/Table";
-import "./App.css";
-import AssigneesContext from "./AssigneesContext";
-import UserContext from "./UserContext";
+import AssigneesContext from "../contexts/AssigneesContext";
+import UserContext from "../contexts/UserContext";
+import {
+  deleteIncident,
+  getIncidents,
+  createIncident,
+  assignIncident,
+} from "./incidents";
 function IncidentList() {
   const [incidents, setIncidents] = useState([]);
   const { user } = useContext(UserContext);
@@ -23,45 +28,33 @@ function IncidentList() {
   const handleClose = () => setShow(false);
 
   useEffect(() => {
-    getIncidents();
+    async function fetchIncidentsAPI() {
+      const result = await getIncidents(user.token);
+      setIncidents(result);
+    }
+
+    fetchIncidentsAPI();
   }, []);
 
-  const getIncidents = async () => {
-    try {
-      const result = await axios.get(`http://localhost:3001/incidents/`, {
-        headers: {
-          Authorization: user.token,
-        },
-      });
+  const createIncidentHandler = async () => {
+    await createIncident(title, details, assignee, user.token);
 
-      setIncidents(result.data);
-    } catch (e) {
-      console.log(e);
-    }
+    setTitle("");
+    setDetails("");
+    setAssignee("");
+    const result = await getIncidents(user.token);
+    setIncidents(result);
+    handleClose();
   };
 
-  const createIncident = async () => {
-    await axios.post("http://localhost:3001/incidents", {
-      title,
-      details,
-      assignee,
-      status: "Not Started",
-    });
-    setTitle('')
-    setDetails('')
-    setAssignee('')
-    await getIncidents();
+  const deleteIncidentHandler = async (incidentId) => {
+    await deleteIncident(incidentId, user.token);
+    const result = await getIncidents(user.token);
+    setIncidents(result);
   };
 
-  const deleteIncident = async (incidentId) => {
-    await axios.delete(`http://localhost:3001/incidents/${incidentId}`);
-    await getIncidents();
-  };
-
-  const assignIncident = async (incidentId, assigneeId) => {
-    await axios.put(
-      `http://localhost:3001/incidents/${incidentId}/${assigneeId}`
-    );
+  const assignIncidentHandler = async (incidentId, assigneeId) => {
+    await assignIncident(incidentId, assigneeId);
   };
   return (
     <>
@@ -87,38 +80,41 @@ function IncidentList() {
                 </tr>
               </thead>
               <tbody>
-                {incidents.map((incident) => (
-                  <tr key={incident.id}>
-                    <td>{incident.id}</td>
-                    <td>{incident.title}</td>
-                    <td>{incident.details}</td>
-                    <td>
-                      <Form.Select
-                        aria-label="Default select example"
-                        onChange={(evt) =>
-                          assignIncident(incident.id, evt.target.value)
-                        }
-                        defaultValue={incident.assignee}
-                      >
-                        <option value="">N/A</option>
-                        {assignees.map((assignee) => (
-                          <option key={assignee.uid} value={assignee.uid}>
-                            {assignee.email}
-                          </option>
-                        ))}
-                      </Form.Select>
-                    </td>
-                    <td>{incident.status}</td>
-                    <td>
-                      <Button
-                        variant="danger"
-                        onClick={() => deleteIncident(incident.id)}
-                      >
-                        Delete
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {incidents.length > 0 &&
+                  incidents.map((incident) => (
+                    <tr key={incident.id}>
+                      <td>{incident.id}</td>
+                      <td>{incident.title}</td>
+                      <td>{incident.details}</td>
+                      <td>
+                        <Form.Select
+                          aria-label="incident-assignee"
+                          data-testid={`select-assignee-${incident.id}`}
+                          onChange={(evt) =>
+                            assignIncidentHandler(incident.id, evt.target.value)
+                          }
+                          defaultValue={incident.assignee}
+                        >
+                          <option value="">N/A</option>
+                          {assignees.map((assignee) => (
+                            <option key={assignee.uid} value={assignee.uid}>
+                              {assignee.email}
+                            </option>
+                          ))}
+                        </Form.Select>
+                      </td>
+                      <td>{incident.status}</td>
+                      <td>
+                        <Button
+                          data-testid={`btn-delete-${incident.id}`}
+                          variant="danger"
+                          onClick={() => deleteIncidentHandler(incident.id)}
+                        >
+                          Delete
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </Table>
           </Col>
@@ -139,6 +135,7 @@ function IncidentList() {
             <Form.Group className="mb-3" controlId="formBasicTitle">
               <Form.Control
                 type="text"
+                aria-label="create-incident-title"
                 placeholder="Enter title"
                 onChange={(evt) => setTitle(evt.target.value)}
               />
@@ -147,6 +144,7 @@ function IncidentList() {
             <Form.Group className="mb-3" controlId="formBasicDetails">
               <Form.Control
                 as="textarea"
+                aria-label="create-incident-details"
                 placeholder="Details here"
                 onChange={(evt) => setDetails(evt.target.value)}
               />
@@ -154,12 +152,14 @@ function IncidentList() {
 
             <Form.Group className="mb-3" controlId="formBasicAssignee">
               <Form.Select
-                aria-label="Default select example"
+                aria-label="create-incident-assignee"
                 onChange={(evt) => setAssignee(evt.target.value)}
               >
                 <option>N/A</option>
                 {assignees.map((assignee) => (
-                  <option value={assignee.uid}>{assignee.email}</option>
+                  <option key={assignee.uid} value={assignee.uid}>
+                    {assignee.email}
+                  </option>
                 ))}
               </Form.Select>
             </Form.Group>
@@ -169,13 +169,7 @@ function IncidentList() {
           <Button variant="secondary" onClick={handleClose}>
             Close
           </Button>
-          <Button
-            variant="primary"
-            onClick={() => {
-              createIncident();
-              handleClose();
-            }}
-          >
+          <Button variant="primary" onClick={createIncidentHandler}>
             Save Changes
           </Button>
         </Modal.Footer>

@@ -1,8 +1,8 @@
 var admin = require("firebase-admin");
 
 module.exports.isAuthorized = async (req, res, next) => {
-  const { authorization } = req.params;
-
+  const { authorization } = req.headers;
+console.log('authorization', )
   if (authorization) {
     const firebaseResult = await admin.auth().verifyIdToken(authorization);
 
@@ -16,4 +16,12 @@ module.exports.isAuthorized = async (req, res, next) => {
 
   res.status(401).send({ error: "Not Authorized" });
   return next(err);
+};
+
+module.exports.verifyToken = async (authorization) => {
+  const firebaseResult = await admin
+    .auth()
+    .verifyIdToken(authorization);
+
+  return firebaseResult;
 };

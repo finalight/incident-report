@@ -7,9 +7,8 @@ import Container from "react-bootstrap/Container";
 import Form from "react-bootstrap/Form";
 import Row from "react-bootstrap/Row";
 import { useNavigate } from "react-router-dom";
-import "./App.css";
-import AssigneesContext from "./AssigneesContext";
-import UserContext from "./UserContext";
+import AssigneesContext from "./contexts/AssigneesContext";
+import UserContext from "./contexts/UserContext";
 function App() {
   const navigate = useNavigate();
 

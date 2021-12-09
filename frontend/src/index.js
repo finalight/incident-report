@@ -5,7 +5,7 @@ import RouteList from "./RouteList";
 import reportWebVitals from "./reportWebVitals";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { BrowserRouter } from "react-router-dom";
-import { app } from "./firebase";
+import { app } from "./firebase/firebase";
 ReactDOM.render(
   <React.StrictMode>
     <BrowserRouter>
